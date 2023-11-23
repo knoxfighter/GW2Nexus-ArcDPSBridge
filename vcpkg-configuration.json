@@ -9,11 +9,8 @@
     {
 	  "kind": "git",
 	  "repository": "https://github.com/Zinn-o-Matics/vcpkg-registry",
-	  "baseline": "5b88b6c12a40b6700c55db9a360d58d5b65a5b62",
-	  "packages": [ "imgui", "spdlog", "cpr", "arcdps-extension", "arcdps-unofficial-extras" ]
+	  "baseline": "9d6feadaf90377ecdb0611b5a8b6d7d7fbf2b74e",
+	  "packages": [ "imgui", "spdlog", "cpr", "arcdps-extension", "arcdps-unofficial-extras", "nexus" ]
 	}
-  ],
-  "overlay-ports": [
-    "D:\\ProgrammeSelbst\\C++\\vcpkg-registry\\ports"
   ]
 }
