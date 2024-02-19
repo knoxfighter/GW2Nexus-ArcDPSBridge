@@ -33,11 +33,8 @@ struct EvCombatData
 void AddonLoad(AddonAPI* aApi);
 void AddonUnload();
 
-AddonDefinition* AddonDef = nullptr;
+AddonDefinition AddonDef = {};
 AddonAPI* APIDefs = nullptr;
-
-std::mutex Mutex;
-std::vector<EvCombatData*> evCombatEvents;
 
 arcdps_exports arc_exports;
 uint32_t cbtcount = 0;
@@ -51,20 +48,20 @@ uintptr_t mod_combat(const char* channel, cbtevent* ev, ag* src, ag* dst, char* 
 
 extern "C" __declspec(dllexport) AddonDefinition* GetAddonDef()
 {
-	AddonDef = new AddonDefinition();
-	AddonDef->Signature = -19392669;
-	AddonDef->APIVersion = NEXUS_API_VERSION;
-	AddonDef->Name = "Nexus ArcDPS Bridge";
-	AddonDef->Version.Major = 1;
-	AddonDef->Version.Minor = 0;
-	AddonDef->Version.Build = 0;
-	AddonDef->Version.Revision = 1;
-	AddonDef->Author = "Raidcore";
-	AddonDef->Description = "Adds events for the ArcDPS combat API.";
-	AddonDef->Load = AddonLoad;
-	AddonDef->Unload = AddonUnload;
+	AddonDef.Signature = -19392669;
+	AddonDef.APIVersion = NEXUS_API_VERSION;
+	AddonDef.Name = "Nexus ArcDPS Bridge";
+	AddonDef.Version.Major = 1;
+	AddonDef.Version.Minor = 0;
+	AddonDef.Version.Build = 0;
+	AddonDef.Version.Revision = 1;
+	AddonDef.Author = "Raidcore";
+	AddonDef.Description = "Raises Nexus Events from ArcDPS combat API callbacks.";
+	AddonDef.Load = AddonLoad;
+	AddonDef.Unload = AddonUnload;
+	AddonDef.Flags = EAddonFlags_DisableHotloading;
 
-	return AddonDef;
+	return &AddonDef;
 }
 
 void AddonLoad(AddonAPI* aApi)
@@ -118,103 +115,25 @@ uintptr_t mod_combat_local(cbtevent* ev, ag* src, ag* dst, char* skillname, uint
 
 uintptr_t mod_combat(const char* channel, cbtevent* ev, ag* src, ag* dst, char* skillname, uint64_t id, uint64_t revision)
 {
-	/*Mutex.lock();
-	if (evCombatEvents.size() > 1000)
+	EvCombatData evCbtData
 	{
-		for (size_t i = 0; i < 500; i++)
-		{
-			if (evCombatEvents[i]->src && evCombatEvents[i]->src->name)
-			{
-				delete[] evCombatEvents[i]->src->name;
-			}
-			if (evCombatEvents[i]->dst && evCombatEvents[i]->dst->name)
-			{
-				delete[] evCombatEvents[i]->dst->name;
-			}
-			if (evCombatEvents[i]->skillname)
-			{
-				delete[] evCombatEvents[i]->skillname;
-			}
-			if (evCombatEvents[i]->src)
-			{
-				delete evCombatEvents[i]->src;
-			}
-			if (evCombatEvents[i]->dst)
-			{
-				delete evCombatEvents[i]->dst;
-			}
-			delete evCombatEvents[i];
-		}
-
-		for (size_t i = 0; i < 500; i++)
-		{
-			evCombatEvents.erase(evCombatEvents.begin());
-		}
-	}
-	Mutex.unlock();*/
-
-	EvCombatData* evCbtData = new EvCombatData();
-	evCbtData->ev = ev != nullptr ? new cbtevent(*ev) : nullptr;
-	evCbtData->src = src != nullptr ? new ag(*src) : nullptr;
-	if (evCbtData->src && evCbtData->src->name)
-	{
-		size_t szSrcName = strlen(src->name) + 1;
-		if (szSrcName > 1)
-		{
-			char* sSrcName = new char[szSrcName];
-			strcpy_s(sSrcName, szSrcName, src->name);
-			evCbtData->src->name = sSrcName;
-		}
-		else
-		{
-			evCbtData->src->name = nullptr;
-		}
-	}
-	evCbtData->dst = dst != nullptr ? new ag(*dst) : nullptr;
-	if (evCbtData->dst && evCbtData->dst->name)
-	{
-		size_t szDstName = strlen(dst->name) + 1;
-		if (szDstName > 1)
-		{
-			char* sDstName = new char[szDstName];
-			strcpy_s(sDstName, szDstName, dst->name);
-			evCbtData->dst->name = sDstName;
-		}
-		else
-		{
-			evCbtData->dst->name = nullptr;
-		}
-	}
-	if (skillname)
-	{
-		size_t szSkName = strlen(skillname) + 1;
-		if (szSkName > 1)
-		{
-			char* sSkName = new char[szSkName];
-			strcpy_s(sSkName, szSkName, skillname);
-			evCbtData->skillname = sSkName;
-		}
-		else
-		{
-			evCbtData->skillname = nullptr;
-		}
-	}
-	evCbtData->id = id;
-	evCbtData->revision = revision;
-
-	Mutex.lock();
-	evCombatEvents.push_back(evCbtData);
-	Mutex.unlock();
+		ev,
+		src,
+		dst,
+		skillname,
+		id,
+		revision
+	};
 
 	if (APIDefs != nullptr)
 	{
 		if (strcmp(channel, "local") == 0)
 		{
-			APIDefs->RaiseEvent("EV_ARC_COMBATEVENT_LOCAL", evCbtData);
+			APIDefs->RaiseEvent("EV_ARCDPS_COMBATEVENT_LOCAL_RAW", &evCbtData);
 		}
 		else
 		{
-			APIDefs->RaiseEvent("EV_ARC_COMBATEVENT_SQUAD", evCbtData);
+			APIDefs->RaiseEvent("EV_ARCDPS_COMBATEVENT_SQUAD_RAW", &evCbtData);
 		}
 	}
 
