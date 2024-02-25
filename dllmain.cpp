@@ -35,7 +35,7 @@ void mod_combat_local(cbtevent* pEvent, ag* pSrc, ag* pDst, const char* pSkillna
 }
 
 arcdps_exports* mod_init() {
-	// if this gets called in error mode (nexus load was before this load).
+	// if this gets called before Nexus init, we don't want to be loaded!
 	// Don't load and give arcdps an error message.
 
 	arcExports.out_name = "Nexus ArcDPS Bridge";
@@ -44,7 +44,7 @@ arcdps_exports* mod_init() {
 	// TODO: generate version from VC_VERSION_INFO
 	arcExports.out_build = __DATE__ " " __TIME__;
 
-	if (nexusApi != nullptr) {
+	if (nexusApi == nullptr) {
 		// arcdps loaded first, we are in an error state, skip initialization and tell arcdps about it!
 		std::string error_message = "Arcdps was loaded first, we do not support this loading order!";
 		arcExports.sig = 0;
@@ -78,7 +78,7 @@ extern "C" __declspec(dllexport) ModReleaseSignature get_release_addr() {
 }
 
 void AddonLoad(AddonAPI* pApi) {
-	// if this gets called after arcdps init, we are in an error state already!
+	// this has to be called before arcpds init!
 
 	nexusApi = pApi;
 
