@@ -8,9 +8,23 @@ find_package(nlohmann_json CONFIG REQUIRED)
 find_package(curl REQUIRED)
 find_path(NEXUS_INCLUDE_DIRS "Nexus/Nexus.h")
 
+include(${ArcdpsExtension_DIR}/vs-version.cmake)
+
+generate_version_file(
+        VERSION_MAJOR 0
+        VERSION_MINOR 1
+        VERSION_PATCH 0
+        VERSION_REF 0
+        INTERNAL_NAME "arcdps_integration64.dll"
+        COPYRIGHT "Copyright (c) 2024 RaidcoreGG"
+        ORIGINAL_FILENAME "arcdps_integration64.dll"
+        PRODUCT_NAME "GW2Nexus-ArcDPSBridge"
+)
+
 add_library(${PROJECT_NAME} SHARED dllmain.cpp
         EventHandler.h
-        BridgeData.h)
+        BridgeData.h
+        "${VERSION_FILE}")
 
 TARGET_COMPILE_FEATURES(${PROJECT_NAME} PUBLIC cxx_std_23)
 
