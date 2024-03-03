@@ -37,3 +37,8 @@ jobs:
         with:
           configurePreset: ${{ matrix.presets }}
           buildPreset: ${{ matrix.presets }}
+      - name: Archive files
+        uses: actions/upload-artifact@v4
+        with:
+          name: arcdps_integration64
+          path: cmake-build/release-windows/arcdps_integration64.dll

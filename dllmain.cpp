@@ -107,6 +107,7 @@ extern "C" __declspec(dllexport) AddonDefinition* GetAddonDef() {
 	NexusDef.Signature = -0x127E89D; // 0xFED81763 // -19392669
 	NexusDef.APIVersion = NEXUS_API_VERSION;
 	NexusDef.Name = "Nexus ArcDPS Bridge";
+
 	auto res = ArcdpsExtension::UpdateCheckerBase::GetCurrentVersion(selfHandle);
 	if (res) {
 		auto version = res.value();
