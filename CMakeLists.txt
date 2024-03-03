@@ -39,6 +39,7 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${BRIDGE_FILENAME}")
 
+target_link_libraries(${PROJECT_NAME} PRIVATE Version.lib)
 target_link_libraries(${PROJECT_NAME} PRIVATE ArcdpsExtension::ArcdpsExtension)
 target_link_libraries(${PROJECT_NAME} PRIVATE magic_enum::magic_enum)
 target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)

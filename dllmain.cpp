@@ -2,6 +2,7 @@
 
 #include <ArcdpsExtension/arcdps_structs.h>
 #include <ArcdpsExtension/ArcdpsExtension.h>
+#include <ArcdpsExtension/UpdateCheckerBase.h>
 #include <Nexus/Nexus.h>
 
 #include <Windows.h>
@@ -10,6 +11,7 @@
 // except when users do weird shit!
 
 namespace {
+	HINSTANCE selfHandle;
 	arcdps_exports arcExports{};
 	AddonDefinition NexusDef{};
 	AddonAPI* nexusApi = nullptr;
@@ -18,6 +20,7 @@ namespace {
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 	switch (fdwReason) {
 		case DLL_PROCESS_ATTACH:
+			selfHandle = hinstDLL;
 			break;
 
 		case DLL_PROCESS_DETACH:
@@ -37,16 +40,30 @@ void mod_combat_local(cbtevent* pEvent, ag* pSrc, ag* pDst, const char* pSkillna
 arcdps_exports* mod_init() {
 	// if this gets called before Nexus init, we don't want to be loaded!
 	// Don't load and give arcdps an error message.
+	std::string error_message;
+	bool error = false;
+
+	if (nexusApi == nullptr) {
+		error = true;
+		error_message = "Arcdps was loaded first, we do not support this loading order";
+	}
 
 	arcExports.out_name = "Nexus ArcDPS Bridge";
 	// hardcoded imgui version, since we don't use it!
 	arcExports.imguivers = 18000;
-	// TODO: generate version from VC_VERSION_INFO
-	arcExports.out_build = __DATE__ " " __TIME__;
+	auto res = ArcdpsExtension::UpdateCheckerBase::GetCurrentVersion(selfHandle);
+	if (res) {
+		auto version = ArcdpsExtension::UpdateCheckerBase::GetVersionAsString(res.value());
+		char* version_c_str = new char[version.length() + 1];
+		strcpy_s(version_c_str, version.length() + 1, version.c_str());
+		arcExports.out_build = version_c_str;
+	} else {
+		error = true;
+		error_message = "Error loading version";
+	}
 
-	if (nexusApi == nullptr) {
-		// arcdps loaded first, we are in an error state, skip initialization and tell arcdps about it!
-		std::string error_message = "Arcdps was loaded first, we do not support this loading order!";
+	if (error) {
+		// we are in an error state, tell arcdps about it
 		arcExports.sig = 0;
 		const std::string::size_type size = error_message.size();
 		char* buffer = new char[size + 1]; // we need extra char for NUL
@@ -90,11 +107,21 @@ extern "C" __declspec(dllexport) AddonDefinition* GetAddonDef() {
 	NexusDef.Signature = -0x127E89D; // 0xFED81763 // -19392669
 	NexusDef.APIVersion = NEXUS_API_VERSION;
 	NexusDef.Name = "Nexus ArcDPS Bridge";
-	// TODO: generate version from VC_VERSION_INFO
-	NexusDef.Version.Major = 1;
-	NexusDef.Version.Minor = 0;
-	NexusDef.Version.Build = 0;
-	NexusDef.Version.Revision = 1;
+	auto res = ArcdpsExtension::UpdateCheckerBase::GetCurrentVersion(selfHandle);
+	if (res) {
+		auto version = res.value();
+		NexusDef.Version.Major = version[0];
+		NexusDef.Version.Minor = version[1];
+		NexusDef.Version.Build = version[2];
+		NexusDef.Version.Revision = version[3];
+	} else {
+		// we don't know our version if the above failed :(
+		NexusDef.Version.Major = 0;
+		NexusDef.Version.Minor = 0;
+		NexusDef.Version.Build = 0;
+		NexusDef.Version.Revision = 0;
+	}
+
 	NexusDef.Author = "Raidcore";
 	NexusDef.Description = "Raises Nexus Events from ArcDPS combat API callbacks.";
 	NexusDef.Load = AddonLoad;
