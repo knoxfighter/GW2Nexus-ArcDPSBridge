@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.28)
 
+# set default name if not overridden
+if (NOT DEFINED BRIDGE_FILENAME)
+    set(BRIDGE_FILENAME "arcdps_integration64")
+endif ()
+
 project(GW2Nexus-ArcDPSBridge)
 
 find_package(ArcdpsExtension CONFIG REQUIRED)
@@ -15,9 +20,9 @@ generate_version_file(
         VERSION_MINOR 1
         VERSION_PATCH 0
         VERSION_REF 0
-        INTERNAL_NAME "arcdps_integration64.dll"
+        INTERNAL_NAME "${BRIDGE_FILENAME}.dll"
         COPYRIGHT "Copyright (c) 2024 RaidcoreGG"
-        ORIGINAL_FILENAME "arcdps_integration64.dll"
+        ORIGINAL_FILENAME "${BRIDGE_FILENAME}.dll"
         PRODUCT_NAME "GW2Nexus-ArcDPSBridge"
 )
 
@@ -26,11 +31,13 @@ add_library(${PROJECT_NAME} SHARED dllmain.cpp
         BridgeData.h
         "${VERSION_FILE}")
 
-TARGET_COMPILE_FEATURES(${PROJECT_NAME} PUBLIC cxx_std_23)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 
 # Use -MT / -MTd runtime library
-SET_PROPERTY(TARGET ${PROJECT_NAME} PROPERTY
+set_property(TARGET ${PROJECT_NAME} PROPERTY
         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${BRIDGE_FILENAME}")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ArcdpsExtension::ArcdpsExtension)
 target_link_libraries(${PROJECT_NAME} PRIVATE magic_enum::magic_enum)
