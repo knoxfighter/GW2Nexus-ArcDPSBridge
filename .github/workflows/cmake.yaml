@@ -7,7 +7,8 @@ jobs:
     strategy:
       matrix:
         os: [ windows-latest ]
-        presets: [ release-windows-clang, release-windows ]
+#        presets: [ release-windows-clang, release-windows ]
+        presets: [ release-windows ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
